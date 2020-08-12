@@ -14,7 +14,7 @@ setup(
     description="Tool to remove cookies notice in html pages",
     long_description=open("README.md").read(),
     install_requires=[],
-    url="https://git.fenrys.io/fenrys/back/python_ddd",
+    url="https://github.com/owlint/CookiesNoticeRemover",
     classifiers=[
         "Programming Language :: Python",
         "Development Status :: 1 - Planning",
