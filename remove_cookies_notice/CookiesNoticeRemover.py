@@ -1,38 +1,33 @@
 import lxml.html
 import logging
 from functools import total_ordering
-from itertools import product
 import sys
 import re
 
 ATTRIBUTES_PATTERNS = [
     "cookie",
-    "cookies",
-    "c-cookie-notice",
-    "qc-cmp-ui",
+    "notice",
+    "qc",
     "didomi",
-    "didomi-popup-view",
-    "didomi-popup",
-    "didomi-consent-popup",
-    "cybotcookiebotdialog",
-    "cookiesdirective",
-    "cookies-directive",
-    "cookiedirective",
-    "cookie-consent",
-    "cookies-consent",
-    "cookiesconsent",
-    "cookieconsent",
-    "cookie-consent-content",
-    "cookie-notification",
-    "cookies_policy_wrap",
-    "cookies_policy",
-    "cookies-policy",
-    "cookie-policy",
-    "cookie_policy",
-    "o-cookie-consent-content",
+    "consent",
+    "cybot",
+    "policy",
+    "privacy",
+    "advert",
+    "popup",
+    "advert",
+    "alert",
+    "dismiss",
+    "banner",
+    "modal",
+    "directive",
+    "notification",
+    "cnil",
+    "cc",
+    "page",
 ]
 
-ATTRIBUTES_LIST = ["id", "class"]
+ATTRIBUTES_LIST = ["id", "class", "data-cookie-banner", "data-testid"]
 
 TEXT_PATTERNS = [
     "cookie",
@@ -122,15 +117,14 @@ class ToRemoveTag:
 class CookiesNoticeRemover:
     def __init__(
         self,
+        minimum_attribute_hints=2,
         minimum_density=0.1,
         no_childrens_evidence_treshold=2,
         verbose=False,
     ):
         self.__attribute_patterns_set = {
-            (attribute_name.lower(), attribute_pattern.lower())
-            for attribute_name, attribute_pattern in product(
-                ATTRIBUTES_LIST, ATTRIBUTES_PATTERNS
-            )
+            attribute_pattern.lower()
+            for attribute_pattern in ATTRIBUTES_PATTERNS
         }
         self.__text_patterns = sorted(
             TEXT_PATTERNS, key=lambda t: len(t), reverse=True
@@ -140,6 +134,7 @@ class CookiesNoticeRemover:
         if verbose:
             self.__logger = logger
 
+        self.__minimum_attribute_hints = minimum_attribute_hints
         self.__minimum_density = minimum_density
         self.__no_childrens_evidence_treshold = no_childrens_evidence_treshold
 
@@ -166,10 +161,15 @@ class CookiesNoticeRemover:
         return self.__search_attribute_patterns_acc(element, [])
 
     def __search_attribute_patterns_acc(self, element, matching_elements):
-        attributes = self.__get_element_attributes(element)
-        matching_attributes = self.__attribute_patterns_set.intersection(
-            attributes
+        element_attributes = self.__get_element_attributes(element)
+        attributes_found_hints = self.__compute_attributes_hints(
+            element_attributes
         )
+        matching_attributes = [
+            attribute
+            for attribute, nb_hints in attributes_found_hints.items()
+            if nb_hints >= self.__minimum_attribute_hints
+        ]
 
         if len(matching_attributes) > 0:
             matching_elements.append(
@@ -185,21 +185,33 @@ class CookiesNoticeRemover:
 
     def __get_element_attributes(self, element):
         return {
-            (attribute_name.lower(), attribute_value.lower())
+            attribute_value.lower()
             for attribute_name, attribute_string_value in element.attrib.items()
             for attribute_value in attribute_string_value.split(" ")
+            if attribute_name.lower() in ATTRIBUTES_LIST
         }
+
+    def __compute_attributes_hints(self, element_attributes):
+        attributes_found_hints = {
+            attribute: 0 for attribute in element_attributes
+        }
+        for attribute_hint in self.__attribute_patterns_set:
+            for element_attribute in element_attributes:
+                if attribute_hint in element_attribute:
+                    attributes_found_hints[element_attribute] += 1
+
+        return attributes_found_hints
 
     def __remove_matching_elements(self, elements):
         sorted_elements = sorted(elements, reverse=True)
-        for element in elements:
+        for element in sorted_elements:
             self.__remove_matching_element(element)
 
     def __remove_matching_element(self, element):
         if element.tag not in TO_KEEP_TAGS:
             element.lxml_element.getparent().remove(element.lxml_element)
         else:
-            self.__write_log(f"Will not remove element because in TO_KEEP_TAGS")
+            self.__write_log("Will not remove element because in TO_KEEP_TAGS")
 
     def __search_text_patterns(self, element, minimum_density):
         return self.__search_text_patterns_acc(element, [], minimum_density)
