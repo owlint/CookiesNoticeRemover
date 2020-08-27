@@ -25,6 +25,8 @@ ATTRIBUTES_PATTERNS = [
     "cnil",
     "cc",
     "page",
+    "disclaimer",
+    "content",
 ]
 
 ATTRIBUTES_LIST = ["id", "class", "data-cookie-banner", "data-testid"]
