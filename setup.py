@@ -3,11 +3,11 @@
 
 from setuptools import find_packages, setup
 
-import remove_cookies_notice
+import removecookiesnotice
 
 setup(
-    name="remove_cookies_notice",
-    version=remove_cookies_notice.__version__,
+    name="removecookiesnotice",
+    version=removecookiesnotice.__version__,
     packages=find_packages(),
     author="Laurent Evrard",
     author_email="laurent@owlint.fr",
@@ -21,8 +21,8 @@ setup(
         "License :: OSI Approved",
         "Natural Language :: French",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Communications",
     ],
-    license="WTFPL",
+    license="Apache License 2.0",
 )
